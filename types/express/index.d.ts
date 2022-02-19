@@ -1,10 +1,10 @@
 import * as express from "express";
 
 declare global {
-  namespace Express {
-    interface Request {
-      responseData: any;
-      user: any;
+    namespace Express {
+        interface Request {
+            responseData: any;
+            user: any;
+        }
     }
-  }
 }
