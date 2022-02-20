@@ -1,7 +1,8 @@
-import { accounts } from "../constants/accounts"; // for data.
+import { getAccounts } from "../constants/accounts"; // for data.
 import { Account } from "../models/account";
 
 export const checkAccount = (id: string) => {
+  const accounts = getAccounts();
   if (accounts.length === 0) return -1;
   else {
     var index_acc = -1;

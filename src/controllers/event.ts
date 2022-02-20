@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
-import { accounts } from "../constants/accounts";
+import { getAccounts, setAccounts } from "../constants/accounts";
 import { checkAccount } from "../helpers/checkAccount";
+import { Account } from "../models/account";
 
 export const event = async (request: Request, response: Response) => {
   try {
@@ -16,17 +17,19 @@ export const event = async (request: Request, response: Response) => {
         data = transferAmount(request);
         return response.status(201).json(data);
       default:
-        return response.status(404).end(0);
+        return response.status(404).json(0);
     }
   } catch (error: any) {
-    response.status(404).end(0);
+    response.status(404).json(0);
   }
 };
 
 const depositAmount = (request: Request) => {
-  const index = checkAccount(request.body.destination);
+  const index: number = checkAccount(request.body.destination);
+  const accounts: Account[] = getAccounts();
   if (index !== -1) {
     accounts[index].balance += request.body.amount;
+    setAccounts(accounts);
     return {
       destination: accounts[index],
     };
@@ -36,6 +39,7 @@ const depositAmount = (request: Request) => {
       balance: request.body.amount,
     };
     accounts.push(newAccount);
+    setAccounts(accounts);
     return {
       destination: newAccount,
     };
@@ -44,8 +48,10 @@ const depositAmount = (request: Request) => {
 
 const withdrawAmount = (request: Request) => {
   const index = checkAccount(request.body.origin);
+  const accounts = getAccounts();
   if (index !== -1) {
     accounts[index].balance -= request.body.amount;
+    setAccounts(accounts);
     return {
       origin: accounts[index],
     };
@@ -56,13 +62,20 @@ const withdrawAmount = (request: Request) => {
 
 const transferAmount = (request: Request) => {
   const origin_index = checkAccount(request.body.origin);
-  const dest_index = checkAccount(request.body.destination);
-  if (origin_index !== -1 && dest_index !== -1) {
+  const dest_index = request.body.destination;
+  const accounts = getAccounts();
+  if (origin_index !== -1) {
     accounts[origin_index].balance -= request.body.amount;
-    accounts[dest_index].balance += request.body.amount;
+    if (checkAccount(request.body.destination) === -1)
+      accounts.push({
+        id: dest_index,
+        balance: request.body.amount,
+      });
+    else accounts[dest_index].balance += request.body.amount;
+    setAccounts(accounts);
     return {
       origin: accounts[origin_index],
-      destination: accounts[dest_index],
+      destination: accounts[checkAccount(request.body.destination)],
     };
   } else {
     throw "non-exist";
